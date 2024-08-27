@@ -12,7 +12,7 @@ const AppConfig = registerAs(ConfigKeys.App, () => {
 });
 const DbConfig = registerAs(ConfigKeys.Db, () => {
   return {
-    port: 3000,
+    port: 5432,
     host: "localhost",
     username: "postgres",
     password: "123456",
