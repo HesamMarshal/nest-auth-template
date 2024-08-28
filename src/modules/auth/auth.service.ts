@@ -34,6 +34,35 @@ export class AuthService {
     return { message: "code sent successfully" };
   }
 
+  async checkOtp(otpDto: CheckOtpDto) {
+    const { mobile, code } = otpDto;
+    const now = new Date();
+    const user = await this.userRepository.findOne({
+      where: { mobile },
+      relations: { otp: true },
+    });
+    console.log(user);
+
+    if (!user || !user?.otp)
+      throw new UnauthorizedException("Mobile not Found");
+
+    if (user?.otp?.code !== code)
+      throw new UnauthorizedException("Otp Code is incorrect");
+
+    if (user?.otp?.expires_in < now)
+      throw new UnauthorizedException("OTP  expired");
+
+    if (!user.mobile_verified)
+      await this.userRepository.update(
+        { id: user.id },
+        {
+          mobile_verified: true,
+        }
+      );
+
+    return { message: "Logged In" };
+  }
+
   // Helper function
   async createOtpForUser(user: UserEntity) {
     // Generate OTP_CODE

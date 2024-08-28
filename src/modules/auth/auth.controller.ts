@@ -12,5 +12,7 @@ export class AuthController {
   }
 
   @Post("/check-otp")
-  checkOTP() {}
+  checkOTP(@Body() otpDto: CheckOtpDto) {
+    return this.authService.checkOtp(otpDto);
+  }
 }
