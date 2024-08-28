@@ -19,7 +19,7 @@ export class SignupDto {
 
   @IsString()
   @Length(6, 20, { message: "Password Length is not in range" })
-  pasword: string;
+  password: string;
 
   @IsString()
   confirm_password: string;
