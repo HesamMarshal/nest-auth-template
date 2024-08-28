@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -12,6 +13,8 @@ import { randomInt } from "crypto";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { TokensPayload } from "./types/payload";
+import { SignupDto } from "./dto/basic.dto";
+import { hashSync, genSaltSync } from "bcrypt";
 
 @Injectable()
 export class AuthService {
@@ -131,5 +134,44 @@ export class AuthService {
     }
   }
 
-  isAuth() {}
+  async signup(signupDto: SignupDto) {
+    const { first_name, last_name, mobile, email, password, confirm_password } =
+      signupDto;
+
+    await this.checkEmail(email);
+    await this.checkMobile(mobile);
+
+    if (password !== confirm_password)
+      throw new BadRequestException(
+        "Password and confirm password are not equal"
+      );
+    const salt = genSaltSync(10);
+    let hashedPassword = hashSync(password, salt);
+
+    const user = this.userRepository.create({
+      first_name,
+      last_name,
+      mobile,
+      email,
+      password: hashedPassword,
+    });
+
+    await this.userRepository.save(user);
+    return { message: "Sign Up OK" };
+  }
+
+  async checkEmail(email: string) {
+    const user = await this.userRepository.findOneBy({
+      email,
+    });
+
+    if (user) throw new ConflictException("Email is already exist");
+  }
+  async checkMobile(mobile: string) {
+    const user = await this.userRepository.findOneBy({
+      mobile,
+    });
+
+    if (user) throw new ConflictException("Mobile is already exist");
+  }
 }
