@@ -9,13 +9,18 @@ import { Repository } from "typeorm";
 import { OTPEntity } from "../user/entities/otp.entity";
 import { CheckOtpDto, SendOtpDto } from "./dto/auth.dto";
 import { randomInt } from "crypto";
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
+import { TokensPayload } from "./types/payload";
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
-    @InjectRepository(OTPEntity) private otpRepository: Repository<OTPEntity>
+    @InjectRepository(OTPEntity) private otpRepository: Repository<OTPEntity>,
+    private jswtService: JwtService,
+    private configService: ConfigService
   ) {}
 
   async sendOTP(otpDto: SendOtpDto) {
@@ -41,7 +46,6 @@ export class AuthService {
       where: { mobile },
       relations: { otp: true },
     });
-    console.log(user);
 
     if (!user || !user?.otp)
       throw new UnauthorizedException("Mobile not Found");
@@ -59,8 +63,11 @@ export class AuthService {
           mobile_verified: true,
         }
       );
-
-    return { message: "Logged In" };
+    const { accessToken, refreshToken } = this.makeUserToken({
+      id: user.id,
+      mobile,
+    });
+    return { accessToken, refreshToken, message: "Logged In" };
   }
 
   // Helper function
@@ -90,4 +97,18 @@ export class AuthService {
     user.otpId = otp.id;
     await this.userRepository.save(user);
   }
+
+  makeUserToken(payload: TokensPayload) {
+    const accessToken = this.jswtService.sign(payload, {
+      secret: this.configService.get("Jwt.accessTokenSecret"),
+      expiresIn: "3d",
+    });
+    const refreshToken = this.jswtService.sign(payload, {
+      secret: this.configService.get("Jwt.refreshTokenSecret"),
+      expiresIn: "1y",
+    });
+    return { accessToken, refreshToken };
+  }
+
+  isAuth() {}
 }
