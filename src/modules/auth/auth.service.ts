@@ -110,5 +110,26 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  async validateAccessToekn(token: string) {
+    try {
+      const payload = this.jswtService.verify<TokensPayload>(token, {
+        secret: this.configService.get("Jwt.accessTokenSecret"),
+      });
+      if (typeof payload == "object" && payload?.id) {
+        const user = await this.userRepository.findOneBy({
+          id: payload.id,
+        });
+
+        if (!user) {
+          throw new UnauthorizedException("Not Logged In");
+        }
+        return user;
+      }
+      throw new UnauthorizedException("Not Logged In");
+    } catch (error) {
+      throw new UnauthorizedException("Not Logged In");
+    }
+  }
+
   isAuth() {}
 }
