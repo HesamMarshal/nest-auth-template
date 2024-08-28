@@ -4,6 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { TypeOrmDbConfig } from "./config/typeorm.config";
 import { UserModule } from "./modules/user/user.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { JwtModule } from "@nestjs/jwt";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuthModule } from "./modules/auth/auth.module";
     }),
     UserModule,
     AuthModule,
+    JwtModule,
   ],
   controllers: [],
   providers: [TypeOrmDbConfig],
