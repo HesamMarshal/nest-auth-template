@@ -135,16 +135,11 @@ export class AuthService {
   }
 
   async signup(signupDto: SignupDto) {
-    const { first_name, last_name, mobile, email, password, confirm_password } =
-      signupDto;
+    const { first_name, last_name, mobile, email, password } = signupDto;
 
     await this.checkEmail(email);
     await this.checkMobile(mobile);
 
-    if (password !== confirm_password)
-      throw new BadRequestException(
-        "Password and confirm password are not equal"
-      );
     let hashedPassword = this.hashPassword(password);
 
     const user = this.userRepository.create({
