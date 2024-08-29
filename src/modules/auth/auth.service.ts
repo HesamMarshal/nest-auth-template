@@ -145,8 +145,7 @@ export class AuthService {
       throw new BadRequestException(
         "Password and confirm password are not equal"
       );
-    const salt = genSaltSync(10);
-    let hashedPassword = hashSync(password, salt);
+    let hashedPassword = this.hashPassword(password);
 
     const user = this.userRepository.create({
       first_name,
@@ -173,5 +172,10 @@ export class AuthService {
     });
 
     if (user) throw new ConflictException("Mobile is already exist");
+  }
+
+  hashPassword(password: string) {
+    const salt = genSaltSync(10);
+    return hashSync(password, salt);
   }
 }
