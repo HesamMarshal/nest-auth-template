@@ -13,8 +13,8 @@ import { randomInt } from "crypto";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { TokensPayload } from "./types/payload";
-import { SignupDto } from "./dto/basic.dto";
-import { hashSync, genSaltSync } from "bcrypt";
+import { LoginDto, SignupDto } from "./dto/basic.dto";
+import { hashSync, genSaltSync, compareSync } from "bcrypt";
 
 @Injectable()
 export class AuthService {
@@ -71,6 +71,42 @@ export class AuthService {
       mobile,
     });
     return { accessToken, refreshToken, message: "Logged In" };
+  }
+
+  async login(loginDto: LoginDto) {
+    const { email, password } = loginDto;
+    const user = await this.userRepository.findOneBy({ email });
+
+    if (!user)
+      throw new UnauthorizedException("Username or password is incorrect");
+
+    if (!compareSync(password, user.password))
+      throw new UnauthorizedException("Username or password is incorrect");
+
+    const { accessToken, refreshToken } = this.makeUserToken({
+      mobile: user.mobile,
+      id: user.id,
+    });
+    return { accessToken, refreshToken, message: "Logged in" };
+  }
+  async signup(signupDto: SignupDto) {
+    const { first_name, last_name, mobile, email, password } = signupDto;
+
+    await this.checkEmail(email);
+    await this.checkMobile(mobile);
+
+    let hashedPassword = this.hashPassword(password);
+
+    const user = this.userRepository.create({
+      first_name,
+      last_name,
+      mobile,
+      email,
+      password: hashedPassword,
+    });
+
+    await this.userRepository.save(user);
+    return { message: "Sign Up OK" };
   }
 
   // Helper function
@@ -132,26 +168,6 @@ export class AuthService {
     } catch (error) {
       throw new UnauthorizedException("Not Logged In");
     }
-  }
-
-  async signup(signupDto: SignupDto) {
-    const { first_name, last_name, mobile, email, password } = signupDto;
-
-    await this.checkEmail(email);
-    await this.checkMobile(mobile);
-
-    let hashedPassword = this.hashPassword(password);
-
-    const user = this.userRepository.create({
-      first_name,
-      last_name,
-      mobile,
-      email,
-      password: hashedPassword,
-    });
-
-    await this.userRepository.save(user);
-    return { message: "Sign Up OK" };
   }
 
   async checkEmail(email: string) {
