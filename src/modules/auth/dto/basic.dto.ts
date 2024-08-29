@@ -34,5 +34,5 @@ export class LoginDto {
 
   @IsString()
   @Length(6, 20, { message: "Password Length is not in range" })
-  pasword: string;
+  password: string;
 }
